@@ -2,12 +2,13 @@ import java.util.Scanner;
 
 public class StudentInformationSystem {
 
+    ///Maximum number of student allowed
     private static final int MAX_STUDENTS = 100;
 
     private static Student[] students = new Student[MAX_STUDENTS];
     private static int studentCount = 0;
 
-  
+  //Scan the input you put
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
@@ -15,13 +16,14 @@ public class StudentInformationSystem {
 
         System.out.println("Student Information System!");
 
-        
+        //Main loop
         while (running) {
             displayMenu();
             int choice = getValidInt("Enter your choice: ", 1, 6);
 
-         //Choose the number from 1-6//
+         //Choose the number from 1-6
             switch (choice) {
+                    // execute each option
                 case 1:
                     addStudent();
                     break;
@@ -50,7 +52,7 @@ public class StudentInformationSystem {
         scanner.close();
     }
 
-    
+    ///Display the system menu
     private static void displayMenu() {
         System.out.println("\n" + "=".repeat(40));
         System.out.println("     STUDENT INFORMATION SYSTEM");
