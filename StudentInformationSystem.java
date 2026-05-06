@@ -20,6 +20,7 @@ public class StudentInformationSystem {
             displayMenu();
             int choice = getValidInt("Enter your choice: ", 1, 6);
 
+         //Choose the number from 1-6//
             switch (choice) {
                 case 1:
                     addStudent();
