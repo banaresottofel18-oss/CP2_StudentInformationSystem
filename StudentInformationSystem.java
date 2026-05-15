@@ -31,13 +31,13 @@ public class StudentInformationSystem {
                     System.out.println("thank you for using the Student Information System!");
                         break;  
                 default:
-                    System.out.printlm(" Invalid choice! Please try again.");
+                    System.out.println(" Invalid choice! Please try again.");
                     break;
             }
         }
         scanner.close() ;
     }
-    }
+    
 
     ///Display the system menu
     private static void displayMenu() {
