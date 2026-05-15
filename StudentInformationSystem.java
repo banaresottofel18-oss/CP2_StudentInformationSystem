@@ -2,7 +2,7 @@ import java.util.*;
 
 public class StudentInformationSystem {
     public static void main(String[] args) {
-        StudentManager manager = new Student Manager();
+        StudentManager manager = new StudentManager();
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
 
@@ -20,7 +20,7 @@ public class StudentInformationSystem {
                         break;
                 case 2: manager.viewAllStudents();
                         break;
-                case 3: managersearchStudent(scanner);
+                case 3: manager.searchStudent(scanner);
                         break;
                 case 4: manager.updateStudent(scanner);
                         break;
@@ -35,8 +35,8 @@ public class StudentInformationSystem {
                     break;
             }
         }
+        scanner.close() ;
     }
-    scanner.close();
     }
 
     ///Display the system menu
