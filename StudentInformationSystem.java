@@ -1,4 +1,8 @@
 import java.util.*;
+import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 public class StudentInformationSystem {
     public static void main(String[] args) {
@@ -74,6 +78,7 @@ public class StudentInformationSystem {
     }
 }
 
+
 //student class
 class Student {
     private final int id;
@@ -115,119 +120,206 @@ class StudentManager{
     private static final int MAX_STUDENTS = 100;
     private final List<Student> students = new ArrayList<>();
 
-    public void addStudent(Scanner scanner) {
-        if (students.size() >= MAX_STUDENTS) {
-            System.out.println("Database is full! Maximum " + MAX_STUDENTS + " students allowed.");
-            return;
-        }
+ 
+public void addStudentToDatabse(Scanner scanner) {
 
-        System.out.println("\n--- Add New Student ---");
+    int id = getValidId(scanner);
+    String name = getNonEmptyString(scanner, "Enter Full Name: ");
+    int age = InputValidator.getValidInt(scanner, "Enter Age: ", 1, 150);
+    String course = getNonEmptyString(scanner, "Enter Course: ");
+    double gpa = InputValidator.getValidDouble(scanner,
+            "Enter GPA: ", 0.0, 4.0);
 
-        int id = getValidId(scanner);
-        if (id == -1) return;
+    try {
+        Connection con = DatabaseConnection.getConnection();
 
-        String name = getNonEmptyString(scanner, "Enter Full Name: ");
-        int age = InputValidator.getValidInt(scanner, "Enter Age (1-150): ", 1, 150);
-        String course = getNonEmptyString(scanner, "Enter Course/Program: ");
-        double gpa = InputValidator.getValidDouble(scanner, "Enter GPA (0.0 - 4.0): ", 0.0, 4.0);
+        String sql =
+        "INSERT INTO students(id,name,age,course,gpa) VALUES(?,?,?,?,?)";
 
-        students.add(new Student(id, name, age, course, gpa));
-        System.out.println("Student added successfully! (Total: " + students.size() + ")");
+        PreparedStatement pst = con.prepareStatement(sql);
+
+        pst.setInt(1, id);
+        pst.setString(2, name);
+        pst.setInt(3, age);
+        pst.setString(4, course);
+        pst.setDouble(5, gpa);
+
+        pst.executeUpdate();
+
+        System.out.println("Student added successfully!");
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
 
-    private int getValidId(Scanner scanner) {
-        while (true) {
-            int id = InputValidator.getValidInt(scanner, "Enter Student ID: ", 1, Integer.MAX_VALUE);
-            if (findStudentById(id) == null) {
+               
+               
+    }
+
+   private int getValidId(Scanner scanner) {
+
+    while (true) {
+
+        int id = InputValidator.getValidInt(scanner,
+                "Enter Student ID: ", 1, Integer.MAX_VALUE);
+
+        try {
+
+            Connection con = DatabaseConnection.getConnection();
+
+            String sql = "SELECT * FROM students WHERE id=?";
+
+            PreparedStatement pst = con.prepareStatement(sql);
+            pst.setInt(1, id);
+
+            ResultSet rs = pst.executeQuery();
+
+            if (!rs.next()) {
+                con.close();
                 return id;
             }
-            System.out.println("ID already exists! Please enter a unique ID.");
+
+            System.out.println("ID already exists! Please enter another ID.");
+            con.close();
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
+}
 
-    public void viewAllStudents() {
-        if (students.isEmpty()) {
-            System.out.println("No students found in the system.");
-            return;
+   public void viewAllStudents() {
+
+    try {
+
+        Connection con = DatabaseConnection.getConnection();
+
+        String sql = "SELECT * FROM students";
+
+        PreparedStatement pst = con.prepareStatement(sql);
+
+        ResultSet rs = pst.executeQuery();
+
+        while(rs.next()){
+
+            System.out.println(
+                rs.getInt("id") + " "
+                + rs.getString("name") + " "
+                + rs.getInt("age") + " "
+                + rs.getString("course") + " "
+                + rs.getDouble("gpa")
+            );
         }
 
-        System.out.println("\n--- All Students (" + students.size() + ") ---");
-        for (int i = 0; i < students.size(); i++) {
-            System.out.println((i + 1) + ". " + students.get(i));
-        }
-        System.out.println("=".repeat(50));
+        con.close();
+
+    } catch(Exception e){
+        System.out.println(e.getMessage());
     }
+}
 
-    public void searchStudent(Scanner scanner) {
-        int id = InputValidator.getValidInt(scanner, "Enter Student ID to search: ", 1, Integer.MAX_VALUE);
-        Student student = findStudentById(id);
+   public void searchStudent(Scanner scanner) {
 
-        if (student == null) {
-            System.out.println("No student found with ID " + id + ".");
+    int id = InputValidator.getValidInt(scanner, "Enter Student ID: ", 1, Integer.MAX_VALUE);
+
+    try {
+        Connection con = DatabaseConnection.getConnection();
+
+        String sql = "SELECT * FROM students WHERE id = ?";
+
+        PreparedStatement pst = con.prepareStatement(sql);
+        pst.setInt(1, id);
+
+        ResultSet rs = pst.executeQuery();
+
+        if (rs.next()) {
+            System.out.println("\nStudent Found:");
+            System.out.println("ID: " + rs.getInt("id"));
+            System.out.println("Name: " + rs.getString("name"));
+            System.out.println("Age: " + rs.getInt("age"));
+            System.out.println("Course: " + rs.getString("course"));
+            System.out.println("GPA: " + rs.getDouble("gpa"));
         } else {
-            System.out.println("\nStudent Found:\n" + student);
-        }
-    }
-
-    public void updateStudent(Scanner scanner) {
-        int id = InputValidator.getValidInt(scanner, "Enter Student ID to update: ", 1, Integer.MAX_VALUE);
-        Student student = findStudentById(id);
-
-        if (student == null) {
             System.out.println("Student not found!");
-            return;
         }
 
-        System.out.println("\nCurrent Information: " + student);
-        System.out.println("Leave blank to keep current value.\n");
+        con.close();
 
-        // Name
-        String newName = getNonEmptyString(scanner, "New Name: ");
-        if (!newName.isEmpty()) student.setName(newName);
-
-        // Age
-        String ageStr = scanner.nextLine().trim();
-        if (!ageStr.isEmpty()) {
-            try {
-                int newAge = Integer.parseInt(ageStr);
-                if (newAge >= 1 && newAge <= 150) student.setAge(newAge);
-                else System.out.println("Invalid age. Keeping original.");
-            } catch (Exception e) {
-                System.out.println("Invalid input. Keeping original.");
-            }
-        }
-
-        // Course
-        String newCourse = getNonEmptyString(scanner, "New Course: ");
-        if (!newCourse.isEmpty()) student.setCourse(newCourse);
-
-        // GPA
-        String gpaStr = scanner.nextLine().trim();
-        if (!gpaStr.isEmpty()) {
-            try {
-                double newGpa = Double.parseDouble(gpaStr);
-                if (newGpa >= 0.0 && newGpa <= 4.0) student.setGpa(newGpa);
-                else System.out.println("Invalid GPA. Keeping original.");
-            } catch (Exception e) {
-                System.out.println("Invalid input. Keeping original.");
-            }
-        }
-
-        System.out.println("Student information updated successfully!");
+    } catch (Exception e) {
+        System.out.println(e.getMessage());
     }
+}
+
+     public void updateStudent(Scanner scanner) {
+
+    int id = InputValidator.getValidInt(scanner,
+            "Enter Student ID to update: ", 1, Integer.MAX_VALUE);
+
+    String name = getNonEmptyString(scanner, "Enter New Name: ");
+    int age = InputValidator.getValidInt(scanner,
+            "Enter New Age: ", 1, 150);
+    String course = getNonEmptyString(scanner, "Enter New Course: ");
+    double gpa = InputValidator.getValidDouble(scanner,
+            "Enter New GPA: ", 0.0, 4.0);
+
+    try {
+
+        Connection con = DatabaseConnection.getConnection();
+
+        String sql = "UPDATE students SET name=?, age=?, course=?, gpa=? WHERE id=?";
+
+        PreparedStatement pst = con.prepareStatement(sql);
+
+        pst.setString(1, name);
+        pst.setInt(2, age);
+        pst.setString(3, course);
+        pst.setDouble(4, gpa);
+        pst.setInt(5, id);
+
+        int rows = pst.executeUpdate();
+
+        if (rows > 0) {
+            System.out.println("Student updated successfully!");
+        } else {
+            System.out.println("Student not found!");
+        }
+
+        con.close();
+
+    } catch (Exception e) {
+        System.out.println(e.getMessage());
+    }
+}
+    
 
     public void deleteStudent(Scanner scanner) {
-        int id = InputValidator.getValidInt(scanner, "Enter Student ID to delete: ", 1, Integer.MAX_VALUE);
-        Student student = findStudentById(id);
 
-        if (student == null) {
+    int id = InputValidator.getValidInt(scanner,
+            "Enter Student ID to delete: ", 1, Integer.MAX_VALUE);
+
+    try {
+
+        Connection con = DatabaseConnection.getConnection();
+
+        String sql = "DELETE FROM students WHERE id=?";
+
+        PreparedStatement pst = con.prepareStatement(sql);
+        pst.setInt(1, id);
+
+        int rows = pst.executeUpdate();
+
+        if (rows > 0) {
+            System.out.println("Student deleted successfully!");
+        } else {
             System.out.println("Student not found!");
-            return;
         }
 
-        students.remove(student);
-        System.out.println("Student with ID " + id + " deleted successfully!");
+        con.close();
+
+    } catch (Exception e) {
+        System.out.println(e.getMessage());
     }
+}
 
     private Student findStudentById(int id) {
         for (Student s : students) {
@@ -245,6 +337,10 @@ class StudentManager{
             if (!input.isEmpty()) return input;
             System.out.println("Input cannot be empty.");
         }
+    }
+
+    void addStudent(Scanner scanner) {
+        addStudentToDatabse(scanner);
     }
 }
 
